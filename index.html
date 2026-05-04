@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BP Calc">
+<meta name="application-name" content="BP Calc">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<meta name="theme-color" content="#003087">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23003087'/%3E%3Ctext x='90' y='80' font-family='Helvetica Neue,Arial,sans-serif' font-size='52' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='middle'%3EBP%3C/text%3E%3Ctext x='90' y='128' font-family='Helvetica Neue,Arial,sans-serif' font-size='24' font-weight='500' fill='rgba(255,255,255,0.75)' text-anchor='middle' dominant-baseline='middle'%3Ecalc%3C/text%3E%3C/svg%3E">
+<title>BP Calculator</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;touch-action:manipulation}
+:root{
+  --bg:#f2f2f7;--surface:#ffffff;--border:#e0e0e5;
+  --text:#1c1c1e;--muted:#8e8e93;--hint:#c7c7cc;
+  --nhs:#003087;--green:#2a6010;--green-bg:#eaf3de;--green-border:#a8d070;
+  --warn:#c46100;
+  --radius:14px;--radius-sm:10px;
+}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;color-scheme:light}
+
+/* HOME SCREEN */
+.home{min-height:100vh;padding:env(safe-area-inset-top,20px) 20px 40px;display:flex;flex-direction:column}
+.home.hidden{display:none}
+.home-header{display:flex;align-items:center;gap:10px;padding:24px 0}
+.home-header h1{font-size:26px;font-weight:700;letter-spacing:-0.4px;flex:1}
+.badge{background:var(--nhs);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;white-space:nowrap}
+.home-subtitle{font-size:15px;color:var(--muted);margin-bottom:24px;line-height:1.5}
+.privacy-card{background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);padding:14px 16px;margin-top:24px;display:flex;gap:10px}
+.privacy-card p{font-size:12px;color:#2a6010;line-height:1.6}
+.privacy-card p strong{display:block;font-weight:700;margin-bottom:2px;font-size:13px}
+.mode-section{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.btn-mode{width:100%;padding:20px;border-radius:var(--radius);border:none;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:14px;letter-spacing:-0.2px;-webkit-tap-highlight-color:transparent;text-align:left;transition:transform .15s}
+.btn-mode:active{transform:scale(0.98)}
+.btn-mode-primary{background:var(--nhs);color:#fff}
+.btn-mode-secondary{background:var(--surface);color:var(--nhs);border:1.5px solid var(--nhs)}
+.btn-mode-icon{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-mode-secondary .btn-mode-icon{background:var(--nhs);color:#fff}
+.btn-mode-icon svg{width:22px;height:22px;fill:currentColor}
+.btn-mode-text{flex:1;display:flex;flex-direction:column}
+.btn-mode-title{font-size:16px;font-weight:600;line-height:1.3}
+.btn-mode-sub{font-size:12px;font-weight:400;opacity:0.75;margin-top:2px}
+.home-footer{margin-top:auto;padding-top:24px;text-align:center}
+.home-footer p{font-size:11px;color:var(--muted);line-height:1.6}
+
+/* ACTIVE SCREEN */
+.screen{min-height:100vh;display:none;flex-direction:column;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 380px);transition:padding-bottom .2s}
+.screen.show{display:flex}
+.screen.no-keypad{padding-bottom:env(safe-area-inset-bottom,40px)}
+.topbar{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,16px) + 12px) 16px 12px}
+.topbar-title{font-size:17px;font-weight:700;flex:1;letter-spacing:-0.3px}
+.btn-home{font-size:13px;font-weight:600;padding:7px 16px;border:none;border-radius:20px;background:var(--nhs);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,48,135,0.2)}
+.btn-home:active{opacity:.85}
+
+.avg-bar{margin:4px 16px 0;background:var(--surface);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between}
+.avg-bar-label{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.avg-bar-count{font-size:15px;font-weight:600;color:var(--text)}
+.avg-bar-right{text-align:right}
+.avg-bar-sublabel{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.avg-number{font-size:34px;font-weight:700;letter-spacing:-1px;color:var(--text);font-variant-numeric:tabular-nums}
+.avg-unit{font-size:13px;color:var(--muted);margin-top:2px}
+.reading-count{margin:8px 16px 0;font-size:13px;color:var(--muted);text-align:center}
+
+.mic-section{margin:14px 16px 0;background:var(--surface);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:14px}
+.mic-section.hide{display:none}
+.mic-btn{width:54px;height:54px;border-radius:50%;border:none;background:var(--nhs);color:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,48,135,0.2)}
+.mic-btn:active{transform:scale(0.95)}
+.mic-btn.listening{background:#d23030;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 2px 10px rgba(210,48,48,0.4)}50%{box-shadow:0 2px 18px rgba(210,48,48,0.7),0 0 0 10px rgba(210,48,48,0.12)}}
+.mic-btn svg{width:24px;height:24px;fill:#fff}
+.mic-info{flex:1;min-width:0}
+.mic-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.mic-status{font-size:11px;color:var(--muted)}
+.mic-status.listening{color:#d23030;font-weight:600}
+.mic-heard{font-size:12px;color:var(--text);font-style:italic;margin-top:4px;min-height:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.no-voice .btn-mode-primary{display:none}
+
+.hint{font-size:13px;color:var(--muted);padding:14px 20px 8px}
+
+.readings{padding:0 16px;display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.reading-card{background:var(--surface);border-radius:var(--radius-sm);padding:0 14px;display:flex;align-items:center;gap:12px;height:56px;transition:background .15s,box-shadow .15s}
+.reading-card.excluded{opacity:.42}
+.reading-card.active{box-shadow:0 0 0 2px var(--nhs);background:#f4f7fc}
+.reading-card.incomplete:not(.active){box-shadow:inset 0 0 0 1.5px #d23030}
+.reading-card.outlier:not(.active){background:rgba(196,97,0,0.08);box-shadow:inset 0 0 0 1.5px rgba(196,97,0,0.45)}
+.reading-card.implausible:not(.active){background:rgba(210,48,48,0.15);box-shadow:inset 0 0 0 2.5px #d23030}
+.tog-btn{width:28px;height:28px;border-radius:50%;background:var(--nhs);border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0}
+.tog-btn.off{background:var(--hint)}
+.tog-btn svg{width:14px;height:14px;stroke:#fff;stroke-width:2.5;fill:none}
+.r-num{font-size:13px;color:var(--muted);width:20px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.bp-display{display:flex;align-items:center;gap:6px;flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;height:100%}
+.bp-num{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text);min-width:42px;text-align:center}
+.bp-num.empty{color:var(--hint);font-weight:400;font-size:18px}
+.bp-num.active{color:var(--nhs)}
+.bp-num.cursor::after{content:'';display:inline-block;width:1.5px;height:20px;background:var(--nhs);margin-left:1px;animation:blink 1s steps(2) infinite;vertical-align:middle}
+@keyframes blink{50%{opacity:0}}
+.bp-slash{font-size:22px;color:var(--hint);font-weight:300;flex-shrink:0}
+.bp-mmhg{font-size:11px;color:var(--hint);flex-shrink:0;margin-left:2px}
+.warn-icon{font-size:14px;flex-shrink:0;cursor:help}
+.del-btn{width:28px;height:28px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;color:var(--hint);font-size:18px;padding:0}
+.add-btn{margin:8px 16px 0;background:var(--surface);border:none;border-radius:var(--radius-sm);height:52px;width:calc(100% - 32px);font-size:16px;font-weight:500;color:var(--nhs);cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;gap:6px}
+.reset-btn{margin:16px 16px 0;background:transparent;border:none;width:calc(100% - 32px);font-size:15px;color:var(--muted);cursor:pointer;padding:8px;-webkit-tap-highlight-color:transparent}
+
+/* KEYPAD */
+.keypad{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 20px rgba(0,0,0,0.06);z-index:30;transform:translateY(100%);transition:transform .25s ease-out}
+.keypad.show{transform:translateY(0)}
+.keypad-header{display:flex;justify-content:space-between;align-items:center;padding:0 6px 10px}
+.keypad-active-label{font-size:13px;color:var(--muted)}
+.keypad-active-label strong{color:var(--text);font-weight:600;font-size:15px}
+.keypad-done{font-size:15px;font-weight:600;color:var(--nhs);background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 10px}
+.kbd-row{display:flex;gap:8px;margin-bottom:8px}
+.kbd-row:last-child{margin-bottom:0}
+.kbd-key{flex:1;height:48px;border-radius:10px;background:#f2f2f7;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:500;color:var(--text);cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:inherit}
+.kbd-key:active{background:#dcdce0}
+.kbd-key.action{background:var(--nhs);color:#fff;font-size:18px;font-weight:600}
+.kbd-key.delete{background:#e8e8ed;font-size:18px}
+.kbd-key.add{background:var(--nhs);color:#fff;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div class="home" id="homeScreen">
+  <div class="home-header">
+    <h1>BP Calculator</h1>
+    <span class="badge">by Dr Khalil</span>
+  </div>
+  <p class="home-subtitle">How would you like to enter the readings?</p>
+  <div class="mode-section">
+    <button class="btn-mode btn-mode-primary" onclick="startVoiceMode()">
+      <div class="btn-mode-icon"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></div>
+      <div class="btn-mode-text">
+        <div class="btn-mode-title">Speak the readings</div>
+        <div class="btn-mode-sub">Say "one forty two over eighty eight"</div>
+      </div>
+    </button>
+    <button class="btn-mode btn-mode-secondary" onclick="startManualMode()">
+      <div class="btn-mode-icon"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg></div>
+      <div class="btn-mode-text">
+        <div class="btn-mode-title">Type the readings</div>
+        <div class="btn-mode-sub">Use the on-screen number pad</div>
+      </div>
+    </button>
+  </div>
+  <div class="privacy-card">
+    <div style="font-size:18px;flex-shrink:0">🛡</div>
+    <p><strong>No data stored — ever.</strong>Calculations happen on this device only. Nothing is saved when you close this tab.</p>
+  </div>
+  <div class="home-footer">
+    <p>Enter each reading from the patient's BP sheet</p>
+  </div>
+</div>
+
+<!-- ACTIVE SCREEN -->
+<div class="screen no-keypad" id="screen">
+  <div class="topbar">
+    <div class="topbar-title">BP Calculator</div>
+    <button class="btn-home" onclick="goHome()">← Home</button>
+  </div>
+  <div class="avg-bar">
+    <div>
+      <div class="avg-bar-label">Included readings</div>
+      <div class="avg-bar-count" id="countLabel">0 of 0</div>
+    </div>
+    <div class="avg-bar-right">
+      <div class="avg-bar-sublabel">Live average</div>
+      <div class="avg-number" id="avgNum">--/--</div>
+      <div class="avg-unit">mmHg</div>
+    </div>
+  </div>
+  <div class="reading-count"><span id="progressCount">0</span> readings entered</div>
+  <div class="mic-section hide" id="micSection">
+    <button class="mic-btn" id="micBtn" onclick="toggleListening()">
+      <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+    </button>
+    <div class="mic-info">
+      <div class="mic-title">Voice input</div>
+      <div class="mic-status" id="micStatus">Tap to speak readings</div>
+      <div class="mic-heard" id="micHeard"></div>
+    </div>
+  </div>
+  <div class="hint">Tap a value to enter or edit. Toggle the tick to include/exclude.</div>
+  <div class="readings" id="readingsList"></div>
+  <button class="add-btn" onclick="addReading(true)"><span style="font-size:20px;line-height:1">+</span> Add reading</button>
+  <button class="reset-btn" onclick="resetAll()">Clear all</button>
+</div>
+
+<!-- KEYPAD -->
+<div class="keypad" id="keypad">
+  <div class="keypad-header">
+    <div class="keypad-active-label">Reading <strong id="kbdReadingNum">1</strong> · <strong id="kbdField">SYS</strong></div>
+    <button class="keypad-done" onclick="hideKeypad()">Done</button>
+  </div>
+  <div class="kbd-row">
+    <button class="kbd-key" onclick="kbdInput('1')">1</button>
+    <button class="kbd-key" onclick="kbdInput('2')">2</button>
+    <button class="kbd-key" onclick="kbdInput('3')">3</button>
+    <button class="kbd-key delete" onclick="kbdBackspace()">⌫</button>
+  </div>
+  <div class="kbd-row">
+    <button class="kbd-key" onclick="kbdInput('4')">4</button>
+    <button class="kbd-key" onclick="kbdInput('5')">5</button>
+    <button class="kbd-key" onclick="kbdInput('6')">6</button>
+    <button class="kbd-key action" onclick="kbdSlash()">/</button>
+  </div>
+  <div class="kbd-row">
+    <button class="kbd-key" onclick="kbdInput('7')">7</button>
+    <button class="kbd-key" onclick="kbdInput('8')">8</button>
+    <button class="kbd-key" onclick="kbdInput('9')">9</button>
+    <button class="kbd-key" onclick="kbdInput('0')">0</button>
+  </div>
+  <div class="kbd-row">
+    <button class="kbd-key add" style="flex:1" onclick="kbdNext()">Next reading ↵</button>
+  </div>
+</div>
+
+<script>
+let readings=[];
+let idCounter=0;
+let activeId=null;
+let activeField='sys';
+let mode=null;
+
+function startVoiceMode(){
+  mode='voice';
+  document.getElementById('homeScreen').classList.add('hidden');
+  document.getElementById('screen').classList.add('show');
+  document.getElementById('micSection').classList.remove('hide');
+  if(readings.length===0)addReading(false);
+}
+
+function startManualMode(){
+  mode='manual';
+  document.getElementById('homeScreen').classList.add('hidden');
+  document.getElementById('screen').classList.add('show');
+  document.getElementById('micSection').classList.add('hide');
+  if(readings.length===0)addReading(true);
+  else setActive(readings[0].id,'sys');
+}
+
+function goHome(){
+  hideKeypad();
+  if(listening&&recognition)recognition.stop();
+  document.getElementById('screen').classList.remove('show');
+  document.getElementById('homeScreen').classList.remove('hidden');
+}
+
+function addReading(openKeypad){
+  const id=idCounter++;
+  readings.push({id,sys:'',dia:'',included:true});
+  renderList();
+  if(openKeypad)setActive(id,'sys');
+}
+
+function removeReading(id,e){
+  if(e)e.stopPropagation();
+  readings=readings.filter(r=>r.id!==id);
+  if(activeId===id){activeId=null;hideKeypad();}
+  renderList();
+}
+
+function toggleReading(id,e){
+  if(e)e.stopPropagation();
+  const r=readings.find(r=>r.id===id);
+  if(r){r.included=!r.included;renderList();}
+}
+
+function setActive(id,field){
+  activeId=id;activeField=field;
+  showKeypad();
+  renderList();
+  const idx=readings.findIndex(r=>r.id===id);
+  document.getElementById('kbdReadingNum').textContent=(idx+1);
+  document.getElementById('kbdField').textContent=field==='sys'?'SYS':'DIA';
+}
+
+function showKeypad(){
+  document.getElementById('keypad').classList.add('show');
+  document.getElementById('screen').classList.remove('no-keypad');
+}
+function hideKeypad(){
+  document.getElementById('keypad').classList.remove('show');
+  document.getElementById('screen').classList.add('no-keypad');
+  activeId=null;
+  renderList();
+}
+
+function kbdInput(d){
+  if(activeId===null)return;
+  const r=readings.find(r=>r.id===activeId);
+  if(!r)return;
+  const c=String(r[activeField]||'');
+  if(c.length>=3)return;
+  r[activeField]=c+d;
+  // Auto-advance sys→dia after 3 digits (min 2 enforced by requiring length===3)
+  if(activeField==='sys'&&r[activeField].length===3)setActive(activeId,'dia');
+  renderList();
+}
+function kbdBackspace(){
+  if(activeId===null)return;
+  const r=readings.find(r=>r.id===activeId);
+  if(!r)return;
+  const current=String(r[activeField]||'');
+  if(current.length===0){
+    if(activeField==='dia'){
+      // Go back to SYS and delete its last digit
+      const sys=String(r.sys||'');
+      if(sys.length>0)r.sys=sys.slice(0,-1);
+      setActive(activeId,'sys');
+    }
+    return;
+  }
+  r[activeField]=current.slice(0,-1);
+  renderList();
+}
+function kbdSlash(){if(activeId!==null)setActive(activeId,'dia');}
+function kbdClear(){
+  if(activeId===null)return;
+  const r=readings.find(r=>r.id===activeId);
+  if(r){r[activeField]='';renderList();}
+}
+function kbdNext(){
+  if(activeId===null)return;
+  const r=readings.find(r=>r.id===activeId);
+  // Don't advance if current field has less than 2 digits
+  if(r&&String(r[activeField]||'').length<2)return;
+  const idx=readings.findIndex(r=>r.id===activeId);
+  if(idx<readings.length-1)setActive(readings[idx+1].id,'sys');
+  else{const id=idCounter++;readings.push({id,sys:'',dia:'',included:true});setActive(id,'sys');}
+}
+function kbdAddNew(){
+  const id=idCounter++;
+  readings.push({id,sys:'',dia:'',included:true});
+  setActive(id,'sys');
+}
+
+function renderList(){
+  const list=document.getElementById('readingsList');
+  list.innerHTML='';
+  readings.forEach((r,i)=>{
+    const sys=parseInt(r.sys),dia=parseInt(r.dia);
+    const outlier=isOutlier(r);
+    const bothComplete=r.sys&&r.dia&&String(r.sys).length>=2&&String(r.dia).length>=2;
+    const serious=bothComplete?isSerious(r):false;
+    const showOutlier=bothComplete&&outlier&&!serious;
+    const div=document.createElement('div');
+    const isIncomplete=(r.sys&&!r.dia)||(r.dia&&!r.sys);
+    let cls='reading-card';
+    if(!r.included)cls+=' excluded';
+    if(activeId===r.id)cls+=' active';
+    if(serious&&r.included)cls+=' implausible';
+    else if(showOutlier&&r.included)cls+=' outlier';
+    if(isIncomplete&&activeId!==r.id)cls+=' incomplete';
+    div.className=cls;
+    const sysActive=activeId===r.id&&activeField==='sys';
+    const diaActive=activeId===r.id&&activeField==='dia';
+    const sysCls='bp-num'+(r.sys?'':' empty')+(sysActive?' active cursor':'');
+    const diaCls='bp-num'+(r.dia?'':' empty')+(diaActive?' active cursor':'');
+    const warnTip='';
+    const showWarn=(serious||showOutlier)&&activeId!==r.id;
+    div.innerHTML='<button class="tog-btn'+(r.included?'':' off')+'"><svg viewBox="0 0 14 14"><polyline points="2,7 5.5,10.5 12,3"/></svg></button><div class="r-num">'+(i+1)+'.</div><div class="bp-display"><div class="'+sysCls+'" data-field="sys">'+(r.sys||'SYS')+'</div><div class="bp-slash">/</div><div class="'+diaCls+'" data-field="dia">'+(r.dia||'DIA')+'</div><div class="bp-mmhg">mmHg</div></div>'+(showWarn?'<span class="warn-icon" title="'+warnTip+'">⚠️</span>':'')+'<button class="del-btn">×</button>';
+    div.querySelector('.tog-btn').onclick=(e)=>toggleReading(r.id,e);
+    div.querySelector('.del-btn').onclick=(e)=>removeReading(r.id,e);
+    div.querySelector('.bp-display').onclick=(e)=>{
+      const tgt=e.target.closest('.bp-num');
+      const field=tgt?tgt.dataset.field:(r.sys?'dia':'sys');
+      setActive(r.id,field||'sys');
+    };
+    list.appendChild(div);
+  });
+  recalculate();
+}
+
+function recalculate(){
+  const valid=readings.filter(r=>{const s=parseInt(r.sys),d=parseInt(r.dia);return !isNaN(s)&&!isNaN(d)&&s>0&&d>0;});
+  const used=valid.filter(r=>r.included);
+  document.getElementById('countLabel').textContent=used.length+' of '+readings.length;
+  document.getElementById('progressCount').textContent=valid.length;
+  const numEl=document.getElementById('avgNum');
+  if(!used.length){numEl.textContent='--/--';numEl.className='avg-number';return;}
+  const s=Math.round(used.reduce((a,r)=>a+parseInt(r.sys),0)/used.length);
+  const d=Math.round(used.reduce((a,r)=>a+parseInt(r.dia),0)/used.length);
+  numEl.textContent=s+'/'+d;
+  numEl.className='avg-number';
+}
+
+function checkPlausible(s,d){
+  if(!s||!d||isNaN(s)||isNaN(d))return null;
+  if(s<=d)return'Systolic ≤ diastolic';
+  if(s-d<20)return'Pulse pressure very narrow';
+  if(s-d>100)return'Pulse pressure very wide';
+  if(s>220)return'Systolic unusually high';
+  if(d>130)return'Diastolic unusually high';
+  return null;
+}
+
+function isSerious(r){
+  const s=parseInt(r.sys),d=parseInt(r.dia);
+  if(isNaN(s)||isNaN(d))return false;
+  return s>=180||d>=110||s<90||d<60;
+}
+
+function isOutlier(reading){
+  const s=parseInt(reading.sys),d=parseInt(reading.dia);
+  if(isNaN(s)||isNaN(d))return false;
+  if(String(reading.sys).length<2||String(reading.dia).length<2)return false;
+  // Exclude active row from mean — it may be mid-entry and skew the calculation
+  const others=readings.filter(r=>
+    r.id!==reading.id&&
+    r.id!==activeId&&
+    r.included&&
+    String(r.sys).length>=2&&String(r.dia).length>=2
+  ).map(r=>({sys:parseInt(r.sys),dia:parseInt(r.dia)}))
+   .filter(r=>!isNaN(r.sys)&&!isNaN(r.dia)&&r.sys>=90&&r.sys<=220&&r.dia>=50&&r.dia<=150);
+  if(others.length<3)return false;
+  const meanS=others.reduce((a,r)=>a+r.sys,0)/others.length;
+  const meanD=others.reduce((a,r)=>a+r.dia,0)/others.length;
+  return Math.abs(s-meanS)>40||Math.abs(d-meanD)>20;
+}
+
+function resetAll(){
+  readings=[];idCounter=0;
+  hideKeypad();
+  renderList();
+  if(mode==='manual')addReading(true);
+  else addReading(false);
+}
+
+// VOICE
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null,listening=false,lastProcessed='';
+if(!SR){document.body.classList.add('no-voice');}
+else{
+  recognition=new SR();
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  recognition.lang='en-GB';
+  recognition.onstart=()=>{listening=true;document.getElementById('micBtn').classList.add('listening');const s=document.getElementById('micStatus');s.classList.add('listening');s.textContent='Listening… tap to stop';document.getElementById('micHeard').textContent='';lastProcessed='';};
+  recognition.onend=()=>{listening=false;document.getElementById('micBtn').classList.remove('listening');const s=document.getElementById('micStatus');s.classList.remove('listening');s.textContent='Tap to speak readings';};
+  recognition.onerror=(e)=>{listening=false;document.getElementById('micBtn').classList.remove('listening');const s=document.getElementById('micStatus');s.classList.remove('listening');s.textContent=e.error==='not-allowed'?'Mic permission denied':'Tap to speak readings';};
+  recognition.onresult=(event)=>{
+    let interim='',finalText='';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      const t=event.results[i][0].transcript;
+      if(event.results[i].isFinal)finalText+=t+' ';else interim+=t;
+    }
+    document.getElementById('micHeard').textContent=(finalText+interim).trim();
+    if(finalText){
+      const newText=finalText.replace(lastProcessed,'').trim();
+      if(newText){
+        const parsed=parseSpokenBP(newText);
+        parsed.forEach(bp=>addReadingFromVoice(bp.sys,bp.dia));
+        lastProcessed+=finalText;
+      }
+    }
+  };
+}
+
+function toggleListening(){
+  if(!recognition)return;
+  if(listening){recognition.stop();}
+  else{try{recognition.start();}catch(e){recognition.stop();setTimeout(()=>recognition.start(),200);}}
+}
+
+const NW={'zero':0,'oh':0,'o':0,'nought':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,'twenty':20,'thirty':30,'forty':40,'fourty':40,'fifty':50,'sixty':60,'seventy':70,'eighty':80,'ninety':90,'hundred':100,'and':-1};
+
+function wordsToNumber(words){
+  let current=0,buffer='';
+  for(const word of words){
+    const w=word.toLowerCase().replace(/[^a-z]/g,'');
+    if(w in NW){
+      const n=NW[w];
+      if(n===-1)continue;
+      if(n===100)current=(current||1)*100;
+      else if(n>=20)current+=n;
+      else if(n<10&&current>=10)current+=n;
+      else if(n<10&&current===0)buffer+=String(n);
+      else current+=n;
+    }else if(/^\d+$/.test(w)){buffer+=w;}
+  }
+  if(buffer&&current===0)return parseInt(buffer);
+  if(buffer&&current>0)return parseInt(buffer+String(current).padStart(current<10?1:2,'0'));
+  return current;
+}
+
+function parseSpokenBP(text){
+  let t=text.toLowerCase().trim();
+  const results=[];
+  t=t.replace(/\bover\b/g,'/').replace(/\bslash\b/g,'/').replace(/\bby\b/g,'/');
+  const re=/(\d{2,3})\s*\/?\s*(\d{2,3})/g;
+  let m;
+  while((m=re.exec(t))!==null){
+    const sys=parseInt(m[1]),dia=parseInt(m[2]);
+    if(sys>=80&&sys<=240&&dia>=40&&dia<=140&&sys>dia)results.push({sys,dia});
+  }
+  if(results.length>0)return results;
+  if(t.includes('/')){
+    const parts=t.split('/');
+    if(parts.length>=2){
+      const sys=wordsToNumber(parts[0].trim().split(/\s+/));
+      const dia=wordsToNumber(parts[1].trim().split(/\s+/));
+      if(sys>=80&&sys<=240&&dia>=40&&dia<=140&&sys>dia)results.push({sys,dia});
+    }
+  }
+  return results;
+}
+
+function addReadingFromVoice(sys,dia){
+  const empty=readings.find(r=>!r.sys&&!r.dia);
+  if(empty){empty.sys=String(sys);empty.dia=String(dia);renderList();}
+  else{const id=idCounter++;readings.push({id,sys:String(sys),dia:String(dia),included:true});renderList();}
+  document.getElementById('micHeard').textContent='✓ Added: '+sys+'/'+dia;
+}
+</script>
+</body>
+</html>
