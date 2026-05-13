@@ -529,6 +529,16 @@ function resetAll(){
 // VOICE
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let recognition=null,listening=false;
+let autoStopTimer=null;
+
+function resetAutoStop(){
+  clearTimeout(autoStopTimer);
+  autoStopTimer=setTimeout(()=>{
+    if(listening&&recognition){
+      recognition.stop();
+    }
+  },3000);
+}
 
 if(!SR){document.body.classList.add('no-voice');}
 else{
@@ -536,31 +546,33 @@ else{
   recognition.continuous=true;
   recognition.interimResults=true;
   recognition.lang='en-GB';
+
+  let processedCount=0;
+
   recognition.onstart=()=>{
     listening=true;
+    processedCount=0;
     document.getElementById('micBtn').classList.add('listening');
     const s=document.getElementById('micStatus');
-    s.classList.add('listening');s.textContent='Listening… tap to stop';
+    s.classList.add('listening');s.textContent='Listening… stops after pause';
     document.getElementById('micHeard').textContent='';
+    resetAutoStop();
   };
   recognition.onend=()=>{
     listening=false;
+    clearTimeout(autoStopTimer);
     document.getElementById('micBtn').classList.remove('listening');
     const s=document.getElementById('micStatus');
     s.classList.remove('listening');s.textContent='Tap to speak readings';
   };
   recognition.onerror=(e)=>{
     listening=false;
+    clearTimeout(autoStopTimer);
     document.getElementById('micBtn').classList.remove('listening');
     const s=document.getElementById('micStatus');
     s.classList.remove('listening');
     s.textContent=e.error==='not-allowed'?'Mic permission denied':'Tap to speak readings';
   };
-
-  // Fix 6: track processed readings by count not by accumulated string
-  let processedCount=0;
-  let pendingReadings=[];
-
   recognition.onresult=(event)=>{
     let interim='',finalText='';
     for(let i=event.resultIndex;i<event.results.length;i++){
@@ -570,22 +582,14 @@ else{
     document.getElementById('micHeard').textContent=(finalText+interim).trim();
     if(finalText){
       const parsed=parseSpokenBP(finalText);
-      // Only process newly found readings beyond what we've already added
       if(parsed.length>processedCount){
         const newOnes=parsed.slice(processedCount);
         newOnes.forEach(bp=>addReadingFromVoice(bp.sys,bp.dia));
         processedCount=parsed.length;
+        // Reset auto-stop timer each time a reading is added
+        resetAutoStop();
       }
     }
-  };
-
-  recognition.onstart=()=>{
-    listening=true;
-    processedCount=0;
-    document.getElementById('micBtn').classList.add('listening');
-    const s=document.getElementById('micStatus');
-    s.classList.add('listening');s.textContent='Listening… tap to stop';
-    document.getElementById('micHeard').textContent='';
   };
 }
 
