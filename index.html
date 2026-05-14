@@ -580,14 +580,14 @@ else{
       if(event.results[i].isFinal)finalText+=t+' ';else interim+=t;
     }
     document.getElementById('micHeard').textContent=(finalText+interim).trim();
+    // Reset auto-stop on any speech — keeps mic open while user is talking
+    resetAutoStop();
     if(finalText){
       const parsed=parseSpokenBP(finalText);
       if(parsed.length>processedCount){
         const newOnes=parsed.slice(processedCount);
         newOnes.forEach(bp=>addReadingFromVoice(bp.sys,bp.dia));
         processedCount=parsed.length;
-        // Reset auto-stop timer each time a reading is added
-        resetAutoStop();
       }
     }
   };
