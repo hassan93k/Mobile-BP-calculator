@@ -547,11 +547,8 @@ else{
   recognition.interimResults=true;
   recognition.lang='en-GB';
 
-  let processedCount=0;
-
   recognition.onstart=()=>{
     listening=true;
-    processedCount=0;
     document.getElementById('micBtn').classList.add('listening');
     const s=document.getElementById('micStatus');
     s.classList.add('listening');s.textContent='Listening… stops after pause';
@@ -580,15 +577,12 @@ else{
       if(event.results[i].isFinal)finalText+=t+' ';else interim+=t;
     }
     document.getElementById('micHeard').textContent=(finalText+interim).trim();
-    // Reset auto-stop on any speech — keeps mic open while user is talking
+    // Reset auto-stop on any speech
     resetAutoStop();
+    // Parse only the new final text from this event — not accumulated history
     if(finalText){
       const parsed=parseSpokenBP(finalText);
-      if(parsed.length>processedCount){
-        const newOnes=parsed.slice(processedCount);
-        newOnes.forEach(bp=>addReadingFromVoice(bp.sys,bp.dia));
-        processedCount=parsed.length;
-      }
+      parsed.forEach(bp=>addReadingFromVoice(bp.sys,bp.dia));
     }
   };
 }
