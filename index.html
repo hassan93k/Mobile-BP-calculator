@@ -530,13 +530,12 @@ function resetAll(){
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let recognition=null,listening=false;
 let autoStopTimer=null;
+let recentlyAdded=new Set();
 
 function resetAutoStop(){
   clearTimeout(autoStopTimer);
   autoStopTimer=setTimeout(()=>{
-    if(listening&&recognition){
-      recognition.stop();
-    }
+    if(listening&&recognition)recognition.stop();
   },3000);
 }
 
@@ -549,19 +548,24 @@ else{
 
   recognition.onstart=()=>{
     listening=true;
+    recentlyAdded=new Set(); // fresh dedup set each session
     document.getElementById('micBtn').classList.add('listening');
     const s=document.getElementById('micStatus');
-    s.classList.add('listening');s.textContent='Listening… stops after pause';
+    s.classList.add('listening');
+    s.textContent='Listening… stops after pause';
     document.getElementById('micHeard').textContent='';
     resetAutoStop();
   };
+
   recognition.onend=()=>{
     listening=false;
     clearTimeout(autoStopTimer);
     document.getElementById('micBtn').classList.remove('listening');
     const s=document.getElementById('micStatus');
-    s.classList.remove('listening');s.textContent='Tap to speak readings';
+    s.classList.remove('listening');
+    s.textContent='Tap to speak readings';
   };
+
   recognition.onerror=(e)=>{
     listening=false;
     clearTimeout(autoStopTimer);
@@ -570,19 +574,31 @@ else{
     s.classList.remove('listening');
     s.textContent=e.error==='not-allowed'?'Mic permission denied':'Tap to speak readings';
   };
+
   recognition.onresult=(event)=>{
     let interim='',finalText='';
     for(let i=event.resultIndex;i<event.results.length;i++){
       const t=event.results[i][0].transcript;
-      if(event.results[i].isFinal)finalText+=t+' ';else interim+=t;
+      if(event.results[i].isFinal)finalText+=t+' ';
+      else interim+=t;
     }
+    // Show what's being heard
     document.getElementById('micHeard').textContent=(finalText+interim).trim();
-    // Reset auto-stop on any speech
+    // Any speech resets the silence timer
     resetAutoStop();
-    // Parse only the new final text from this event — not accumulated history
+    // Only process final results
     if(finalText){
       const parsed=parseSpokenBP(finalText);
-      parsed.forEach(bp=>addReadingFromVoice(bp.sys,bp.dia));
+      parsed.forEach(bp=>{
+        const key=bp.sys+'/'+bp.dia;
+        // Prevent duplicate adds from the same final result firing twice
+        if(!recentlyAdded.has(key)){
+          recentlyAdded.add(key);
+          addReadingFromVoice(bp.sys,bp.dia);
+          // Allow same reading again after 2 seconds (patient may genuinely repeat)
+          setTimeout(()=>recentlyAdded.delete(key),2000);
+        }
+      });
     }
   };
 }
